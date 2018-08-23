@@ -52,7 +52,12 @@ private func doPendingWriteVectorOperation(pending: PendingStreamWritesState,
 
             buffer.withUnsafeReadableBytesWithStorageManagement { ptr, storageRef in
                 storageRefs[i] = storageRef.retain()
-                iovecs[i] = iovec(iov_base: UnsafeMutableRawPointer(mutating: ptr.baseAddress!), iov_len: toWriteForThisBuffer)
+#if os(Android)
+                let iov_len = UInt32(toWriteForThisBuffer)
+#else
+                let iov_len = toWriteForThisBuffer
+#endif
+                iovecs[i] = iovec(iov_base: UnsafeMutableRawPointer(mutating: ptr.baseAddress!), iov_len: iov_len)
             }
             numberOfUsedStorageSlots += 1
         case .fileRegion:

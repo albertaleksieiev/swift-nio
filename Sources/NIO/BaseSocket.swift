@@ -13,6 +13,10 @@
 //===----------------------------------------------------------------------===//
 
 /// A Registration on a `Selector`, which is interested in an `SelectorEventSet`.
+#if os(Android)
+internal typealias sockaddr_storage = __kernel_sockaddr_storage
+#endif
+
 protocol Registration {
     /// The `SelectorEventSet` in which the `Registration` is interested.
     var interested: SelectorEventSet { get set }

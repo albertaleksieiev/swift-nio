@@ -14,6 +14,19 @@
 
 import Dispatch
 
+#if os(Android)
+fileprivate extension Int32 {
+    var rawValue: UInt32 {
+        return UInt32(self)    
+    }    
+}
+fileprivate extension UInt32 {
+    var rawValue: UInt32 {
+        return self
+    }    
+}
+#endif
+
 private enum SelectorLifecycleState {
     case open
     case closing

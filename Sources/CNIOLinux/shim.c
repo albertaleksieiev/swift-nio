@@ -14,10 +14,11 @@
 #ifdef __linux__
 
 #define _GNU_SOURCE
+
 #include <c_nio_linux.h>
 #include <pthread.h>
 #include <sched.h>
-
+#include <sys/prctl.h>
 
 _Static_assert(sizeof(CNIOLinux_mmsghdr) == sizeof(struct mmsghdr),
                "sizes of CNIOLinux_mmsghdr and struct mmsghdr differ");
@@ -43,14 +44,27 @@ int CNIOLinux_pthread_setname_np(pthread_t thread, const char *name) {
 }
 
 int CNIOLinux_pthread_getname_np(pthread_t thread, char *name, size_t len) {
+#ifdef __ANDROID__
+    return prctl(PR_GET_NAME); // https://android.googlesource.com/platform/dalvik/+/kitkat-release/vm/Thread.cpp#1209
+#else
     return pthread_getname_np(thread, name, len);
+#endif
 }
 
 int CNIOLinux_pthread_setaffinity_np(pthread_t thread, size_t cpusetsize, const cpu_set_t *cpuset) {
+#ifdef __ANDROID__
+    return sched_setaffinity(thread, cpusetsize, cpuset);
+#else
     return pthread_setaffinity_np(thread, cpusetsize, cpuset);
+#endif
 }
+
 int CNIOLinux_pthread_getaffinity_np(pthread_t thread, size_t cpusetsize, cpu_set_t *cpuset) {
+#ifdef __ANDROID__
+    return sched_getaffinity(thread, cpusetsize, cpuset);
+#else
     return pthread_getaffinity_np(thread, cpusetsize, cpuset);
+#endif
 }
 
 void CNIOLinux_CPU_SET(int cpu, cpu_set_t *set) {

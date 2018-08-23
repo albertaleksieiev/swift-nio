@@ -99,9 +99,13 @@ internal enum Epoll {
 }
 
 internal enum Linux {
+#if os(Android)
+    static let SOCK_CLOEXEC = Int32(bitPattern: UInt32(Glibc.SOCK_CLOEXEC))
+    static let SOCK_NONBLOCK = Int32(bitPattern: UInt32(Glibc.SOCK_NONBLOCK))
+#else
     static let SOCK_CLOEXEC = Int32(bitPattern: Glibc.SOCK_CLOEXEC.rawValue)
     static let SOCK_NONBLOCK = Int32(bitPattern: Glibc.SOCK_NONBLOCK.rawValue)
-
+#endif
     @inline(never)
     public static func accept4(descriptor: CInt, addr: UnsafeMutablePointer<sockaddr>, len: UnsafeMutablePointer<socklen_t>, flags: Int32) throws -> CInt? {
         let result: IOResult<CInt> = try wrapSyscallMayBlock {
