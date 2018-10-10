@@ -384,17 +384,18 @@ public final class EventLoopFuture<T> {
     }
 
     deinit {
-        debugOnly {
-            if let eventLoop = self.eventLoop as? SelectableEventLoop {
-                let creation = eventLoop.promiseCreationStoreRemove(future: self)
-                if !isFulfilled {
-                    fatalError("leaking promise created at \(creation)", file: creation.file, line: creation.line)
-                }
-            } else {
-                precondition(isFulfilled, "leaking an unfulfilled Promise")
-            }
-        }
-        
+//        https://github.com/vapor/vapor/issues/1689
+//
+//        debugOnly {
+//            if let eventLoop = self.eventLoop as? SelectableEventLoop {
+//                let creation = eventLoop.promiseCreationStoreRemove(future: self)
+//                if !isFulfilled {
+//                    fatalError("leaking promise created at \(creation)", file: creation.file, line: creation.line)
+//                }
+//            } else {
+//                precondition(isFulfilled, "leaking an unfulfilled Promise")
+//            }
+//        }
         self._isFulfilled.destroy()
     }
 }
