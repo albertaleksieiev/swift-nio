@@ -580,7 +580,7 @@ enum NIORegistration: Registration {
 
 /// Execute the given closure and ensure we release all auto pools if needed.
 private func withAutoReleasePool<T>(_ execute: () throws -> T) rethrows -> T {
-    #if os(Linux)
+    #if os(Linux) || os(Android)
     return try execute()
     #else
     return try autoreleasepool {

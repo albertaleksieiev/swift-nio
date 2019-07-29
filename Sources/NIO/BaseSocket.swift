@@ -272,7 +272,7 @@ class BaseSocket: Selectable {
     /// - throws: An `IOError` if creation of the socket failed.
     static func makeSocket(protocolFamily: Int32, type: CInt, setNonBlocking: Bool = false) throws -> Int32 {
         var sockType = type
-        #if os(Linux)
+        #if os(Linux) || os(Android)
         if setNonBlocking {
             sockType = type | Linux.SOCK_NONBLOCK
         }
@@ -280,7 +280,7 @@ class BaseSocket: Selectable {
         let sock = try Posix.socket(domain: protocolFamily,
                                     type: sockType,
                                     protocol: 0)
-        #if !os(Linux)
+        #if !(os(Linux) || os(Android))
         if setNonBlocking {
             do {
                 try BaseSocket.setNonBlocking(fileDescriptor: sock)

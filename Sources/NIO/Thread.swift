@@ -18,7 +18,7 @@ private typealias ThreadBoxValue = (body: (NIOThread) -> Void, name: String?)
 private typealias ThreadBox = Box<ThreadBoxValue>
 
 
-#if os(Linux)
+#if os(Linux) || os(Android)
 private let sys_pthread_getname_np = CNIOLinux_pthread_getname_np
 private let sys_pthread_setname_np = CNIOLinux_pthread_setname_np
 #else
@@ -78,7 +78,7 @@ final class NIOThread {
     ///     - body: The function to execute within the spawned `NIOThread`.
     static func spawnAndRun(name: String? = nil, body: @escaping (NIOThread) -> Void) {
         // Unfortunately the pthread_create method take a different first argument depending on if it's on Linux or macOS, so ensure we use the correct one.
-        #if os(Linux)
+        #if os(Linux) || os(Android)
             var pt: pthread_t = pthread_t()
         #else
             var pt: pthread_t? = nil

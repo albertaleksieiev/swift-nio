@@ -88,7 +88,7 @@ struct DatagramVectorReadManager {
                 // TODO(cory): almost all of this except for the iovec could be done at allocation time. Maybe we should?
 
                 // First we set up the iovec and save it off.
-                self.ioVector[i] = IOVector(iov_base: bufferPointer.baseAddress! + (i * messageSize), iov_len: messageSize)
+                self.ioVector[i] = IOVector(iov_base: bufferPointer.baseAddress! + (i * messageSize), iov_len: __kernel_size_t(messageSize))
 
                 // Next we set up the msghdr structure. This points into the other vectors.
                 let msgHdr = msghdr(msg_name: self.sockaddrVector.baseAddress! + i ,

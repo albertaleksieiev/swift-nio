@@ -69,7 +69,7 @@
 
             let result = try withUnsafeMutablePointer(to: &acceptAddr) { (ptr) throws -> CInt? in
                 try ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { ptr in
-                    #if os(Linux)
+                    #if os(Linux) || os(Android)
                     let flags: Int32
                     if setNonBlocking {
                         flags = Linux.SOCK_NONBLOCK
@@ -87,7 +87,7 @@
                 return nil
             }
             let sock = Socket(descriptor: fd)
-            #if !os(Linux)
+            #if !(os(Linux) || os(Android))
             if setNonBlocking {
                 do {
                     try sock.setNonBlocking()

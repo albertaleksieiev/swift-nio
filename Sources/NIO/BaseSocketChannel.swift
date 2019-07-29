@@ -925,7 +925,7 @@ class BaseSocketChannel<T: BaseSocket>: SelectableChannel, ChannelCore {
                 } else {
                     // we don't have a socket error, this must be connection reset without an error then
                     // this path should only be executed on Linux (EPOLLHUP, no EPOLLERR)
-                    #if os(Linux)
+                    #if os(Linux) || os(Android)
                     let message: String = "connection reset (no error set)"
                     #else
                     let message: String = "BUG IN SwiftNIO (possibly #572), please report! Connection reset (no error set)."
