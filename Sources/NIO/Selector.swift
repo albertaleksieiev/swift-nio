@@ -196,7 +196,7 @@ extension EpollFilterSet {
 }
 
 extension SelectorEventSet {
-    #if os(Linux)
+    #if os(Linux) || os(Android)
     var epollEventSet: UInt32 {
         assert(self != ._none)
         // EPOLLERR | EPOLLHUP is always set unconditionally anyway but it's easier to understand if we explicitly ask.
@@ -244,7 +244,7 @@ extension SelectorEventSet {
 final class Selector<R: Registration> {
     private var lifecycleState: SelectorLifecycleState
 
-    #if os(Linux)
+    #if os(Linux) || os(Android)
     private typealias EventType = Epoll.epoll_event
     private let eventfd: Int32
     private let timerfd: Int32
@@ -286,7 +286,7 @@ final class Selector<R: Registration> {
         events = Selector.allocateEventsArray(capacity: eventsCapacity)
         self.lifecycleState = .closed
 
-#if os(Linux)
+#if os(Linux) || os(Android)
         fd = try Epoll.epoll_create(size: 128)
         eventfd = try EventFd.eventfd(initval: 0, flags: Int32(EventFd.EFD_CLOEXEC | EventFd.EFD_NONBLOCK))
         timerfd = try TimerFd.timerfd_create(clockId: CLOCK_MONOTONIC, flags: Int32(TimerFd.TFD_CLOEXEC | TimerFd.TFD_NONBLOCK))
@@ -333,7 +333,7 @@ final class Selector<R: Registration> {
          */
 
         // we try! this because `close` only fails in cases that should never happen (EBADF).
-#if os(Linux)
+#if os(Linux) || os(Android)
         try! Posix.close(descriptor: self.eventfd)
 #else
         try! Posix.close(descriptor: self.fd)
@@ -405,7 +405,7 @@ final class Selector<R: Registration> {
 
         try selectable.withUnsafeFileDescriptor { fd in
             assert(registrations[Int(fd)] == nil)
-            #if os(Linux)
+            #if os(Linux) || os(Android)
                 var ev = Epoll.epoll_event()
                 ev.events = interested.epollEventSet
                 ev.data.fd = fd
@@ -431,7 +431,7 @@ final class Selector<R: Registration> {
         try selectable.withUnsafeFileDescriptor { fd in
             var reg = registrations[Int(fd)]!
 
-            #if os(Linux)
+            #if os(Linux) || os(Android)
                 var ev = Epoll.epoll_event()
                 ev.events = interested.epollEventSet
                 ev.data.fd = fd
@@ -462,7 +462,7 @@ final class Selector<R: Registration> {
                 return
             }
 
-            #if os(Linux)
+            #if os(Linux) || os(Android)
                 var ev = Epoll.epoll_event()
                 _ = try Epoll.epoll_ctl(epfd: self.fd, op: Epoll.EPOLL_CTL_DEL, fd: fd, event: &ev)
             #else
@@ -481,7 +481,7 @@ final class Selector<R: Registration> {
             throw IOError(errnoCode: EBADF, reason: "can't call whenReady for selector as it's \(self.lifecycleState).")
         }
 
-#if os(Linux)
+#if os(Linux) || os(Android)
         let ready: Int
 
         switch strategy {
@@ -606,11 +606,11 @@ final class Selector<R: Registration> {
         self.registrations.removeAll()
 
         /* note, we can't close `self.fd` (on macOS) or `self.eventfd` (on Linux) here as that's read unprotectedly and might lead to race conditions. Instead, we abuse ARC to close it for us. */
-#if os(Linux)
+#if os(Linux) || os(Android)
         _ = try Posix.close(descriptor: self.timerfd)
 #endif
 
-#if os(Linux)
+#if os(Linux) || os(Android)
         /* `self.fd` is used as the event file descriptor to wake kevent() up so can't be closed here on macOS */
         _ = try Posix.close(descriptor: self.fd)
 #endif
@@ -619,7 +619,7 @@ final class Selector<R: Registration> {
     /* attention, this may (will!) be called from outside the event loop, ie. can't access mutable shared state (such as `self.open`) */
     func wakeup() throws {
 
-#if os(Linux)
+#if os(Linux) || os(Android)
         /* this is fine as we're abusing ARC to close `self.eventfd` */
         _ = try EventFd.eventfd_write(fd: self.eventfd, value: 1)
 #else

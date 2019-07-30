@@ -388,7 +388,7 @@ class SelectorTest: XCTestCase {
         #if os(macOS)
         let err = socketpair(PF_LOCAL, SOCK_STREAM, 0, &socketFDs)
         #else
-        let err = socketpair(PF_LOCAL, CInt(SOCK_STREAM.rawValue), 0, &socketFDs)
+        let err = socketpair(PF_LOCAL, CInt(SOCK_STREAM), 0, &socketFDs)
         #endif
         XCTAssertEqual(0, err)
 

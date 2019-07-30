@@ -32,12 +32,12 @@ let badOS = { fatalError("unsupported OS") }()
 
 #if os(Android)
 let INADDR_ANY = UInt32(0) // #define INADDR_ANY ((unsigned long int) 0x00000000)
-internal typealias sockaddr_storage = __kernel_sockaddr_storage
 internal typealias in_port_t = UInt16
 let getifaddrs: @convention(c) (UnsafeMutablePointer<UnsafeMutablePointer<ifaddrs>?>?) -> CInt = android_getifaddrs
 let freeifaddrs: @convention(c) (UnsafeMutablePointer<ifaddrs>?) -> Void = android_freeifaddrs
 extension ipv6_mreq { // http://lkml.iu.edu/hypermail/linux/kernel/0106.1/0080.html
     init (ipv6mr_multiaddr: in6_addr, ipv6mr_interface: UInt32) {
+        self.init()
         self.ipv6mr_multiaddr = ipv6mr_multiaddr
         self.ipv6mr_ifindex = Int32(bitPattern: ipv6mr_interface)
     }
@@ -85,7 +85,7 @@ private let sysAF_INET6 = AF_INET6
 private let sysAF_UNIX = AF_UNIX
 private let sysInet_ntop: @convention(c) (CInt, UnsafeRawPointer?, UnsafeMutablePointer<CChar>?, socklen_t) -> UnsafePointer<CChar>? = inet_ntop
 
-#if os(Linux)
+#if os(Linux) || os(Android)
 private let sysSendMmsg: @convention(c) (CInt, UnsafeMutablePointer<CNIOLinux_mmsghdr>?, CUnsignedInt, CInt) -> CInt = CNIOLinux_sendmmsg
 private let sysRecvMmsg: @convention(c) (CInt, UnsafeMutablePointer<CNIOLinux_mmsghdr>?, CUnsignedInt, CInt, UnsafeMutablePointer<timespec>?) -> CInt  = CNIOLinux_recvmmsg
 #else
@@ -266,7 +266,7 @@ internal enum Posix {
         return try wrapSyscall {
             let fd = sysSocket(domain, type, `protocol`)
 
-            #if os(Linux)
+            #if os(Linux) || os(Android)
                 /* no SO_NOSIGPIPE on Linux :( */
                 _ = unsafeBitCast(Glibc.signal(SIGPIPE, SIG_IGN) as sighandler_t?, to: Int.self)
             #else
@@ -308,7 +308,7 @@ internal enum Posix {
         let result: IOResult<CInt> = try wrapSyscallMayBlock {
             let fd = sysAccept(descriptor, addr, len)
 
-            #if !os(Linux)
+            #if !(os(Linux) || os(Android))
                 if fd != -1 {
                     let ret = try? Posix.fcntl(descriptor: fd, command: F_SETNOSIGPIPE, value: 1)
                     assert(ret == .some(0),
@@ -429,7 +429,7 @@ internal enum Posix {
                     var off: off_t = offset
                     let result: ssize_t = Glibc.sendfile(descriptor, fd, &off, count)
                     if result >= 0 {
-                        written = result
+                        written = off_t(result)
                     } else {
                         written = 0
                     }

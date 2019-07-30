@@ -22,7 +22,7 @@ import CNIOLinux
 
 private extension ifaddrs {
     var dstaddr: UnsafeMutablePointer<sockaddr>? {
-        #if os(Linux)
+        #if os(Linux) || os(Android)
         return self.ifa_ifu.ifu_dstaddr
         #elseif os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
         return self.ifa_dstaddr
@@ -30,7 +30,7 @@ private extension ifaddrs {
     }
 
     var broadaddr: UnsafeMutablePointer<sockaddr>? {
-        #if os(Linux)
+        #if os(Linux) || os(Android)
         return self.ifa_ifu.ifu_broadaddr
         #elseif os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
         return self.ifa_dstaddr
@@ -83,10 +83,10 @@ public final class NIONetworkInterface {
             self.netmask = nil
         }
 
-        if (caddr.ifa_flags & UInt32(IFF_BROADCAST)) != 0, let addr = caddr.broadaddr {
+        if (caddr.ifa_flags & UInt32(IFF_BROADCAST.rawValue)) != 0, let addr = caddr.broadaddr {
             self.broadcastAddress = addr.convert()
             self.pointToPointDestinationAddress = nil
-        } else if (caddr.ifa_flags & UInt32(IFF_POINTOPOINT)) != 0, let addr = caddr.dstaddr {
+        } else if (caddr.ifa_flags & UInt32(IFF_POINTOPOINT.rawValue)) != 0, let addr = caddr.dstaddr {
             self.broadcastAddress = nil
             self.pointToPointDestinationAddress = addr.convert()
         } else {

@@ -19,6 +19,7 @@
 #include <sched.h>
 #include <stdio.h>
 #include <sys/prctl.h>
+#include <unistd.h>
 
 _Static_assert(sizeof(CNIOLinux_mmsghdr) == sizeof(struct mmsghdr),
                "sizes of CNIOLinux_mmsghdr and struct mmsghdr differ");
