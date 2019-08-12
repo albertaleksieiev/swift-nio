@@ -127,7 +127,7 @@ private final class PongHandler: ChannelInboundHandler {
 }
 
 private func withAutoReleasePool<T>(_ execute: () throws -> T) rethrows -> T {
-    #if os(Linux)
+    #if os(Linux) || os(Android)
     return try execute()
     #else
     return try autoreleasepool {

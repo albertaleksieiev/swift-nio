@@ -430,7 +430,7 @@ public class EventLoopTest : XCTestCase {
     }
 
     public func testEventLoopPinned() throws {
-        #if os(Linux)
+        #if os(Linux) || os(Android)
             let body: ThreadInitializer = { t in
                 let set = LinuxCPUSet(0)
                 t.affinity = set

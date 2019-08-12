@@ -17,6 +17,73 @@ import XCTest
 
 @testable import NIO
 
+// Druk: this is hack for Android
+// Unfortunetly extension with conditional conformance not visible here
+// Just copied from BaseSocket.swift
+extension sockaddr_in {
+
+    mutating func withSockAddr<R>(_ body: (UnsafePointer<sockaddr>, Int) throws -> R) rethrows -> R {
+        var me = self
+        return try withUnsafeBytes(of: &me) { p in
+            try body(p.baseAddress!.assumingMemoryBound(to: sockaddr.self), p.count)
+        }
+    }
+
+    mutating func withMutableSockAddr<R>(_ body: (UnsafeMutablePointer<sockaddr>, Int) throws -> R) rethrows -> R {
+        var me = self
+        return try withUnsafeMutableBytes(of: &me) { p in
+            try body(p.baseAddress!.assumingMemoryBound(to: sockaddr.self), p.count)
+        }
+    }
+
+    /// Returns a description of the `sockaddr_in`.
+    mutating func addressDescription() -> String {
+        return withUnsafePointer(to: &self.sin_addr) { addrPtr in
+            // this uses inet_ntop which is documented to only fail if family is not AF_INET or AF_INET6 (or ENOSPC)
+            try! descriptionForAddress(family: AF_INET, bytes: addrPtr, length: Int(INET_ADDRSTRLEN))
+        }
+    }
+}
+
+extension sockaddr_in6 {
+
+    mutating func withSockAddr<R>(_ body: (UnsafePointer<sockaddr>, Int) throws -> R) rethrows -> R {
+        var me = self
+        return try withUnsafeBytes(of: &me) { p in
+            try body(p.baseAddress!.assumingMemoryBound(to: sockaddr.self), p.count)
+        }
+    }
+
+    mutating func withMutableSockAddr<R>(_ body: (UnsafeMutablePointer<sockaddr>, Int) throws -> R) rethrows -> R {
+        var me = self
+        return try withUnsafeMutableBytes(of: &me) { p in
+            try body(p.baseAddress!.assumingMemoryBound(to: sockaddr.self), p.count)
+        }
+    }
+
+    /// Returns a description of the `sockaddr_in6`.
+    mutating func addressDescription() -> String {
+        return withUnsafePointer(to: &self.sin6_addr) { addrPtr in
+            // this uses inet_ntop which is documented to only fail if family is not AF_INET or AF_INET6 (or ENOSPC)
+            try! descriptionForAddress(family: AF_INET6, bytes: addrPtr, length: Int(INET6_ADDRSTRLEN))
+        }
+    }
+}
+
+extension sockaddr_storage {
+    /// Converts the `socketaddr_storage` to a `sockaddr_in`.
+    ///
+    /// This will crash if `ss_family` != AF_INET!
+    mutating func convert() -> sockaddr_in {
+        precondition(self.ss_family == AF_INET)
+        return withUnsafePointer(to: &self) {
+            $0.withMemoryRebound(to: sockaddr_in.self, capacity: 1) {
+                $0.pointee
+            }
+        }
+    }
+}
+
 func withPipe(_ body: (NIO.FileHandle, NIO.FileHandle) -> [NIO.FileHandle]) throws {
     var fds: [Int32] = [-1, -1]
     fds.withUnsafeMutableBufferPointer { ptr in
